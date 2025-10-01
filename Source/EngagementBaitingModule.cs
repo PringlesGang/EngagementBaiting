@@ -27,9 +27,11 @@ public class EngagementBaitingModule : EverestModule {
 
     public override void Load() {
         // TODO: apply any hooks that should always be active
+        On.Celeste.Player.Die += EngagementBaitingDeathScreen.ShowDeathScreen;
     }
 
     public override void Unload() {
         // TODO: unapply any hooks applied in Load()
+        On.Celeste.Player.Die -= EngagementBaitingDeathScreen.ShowDeathScreen;
     }
 }
