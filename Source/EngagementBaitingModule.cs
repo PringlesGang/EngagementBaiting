@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.EngagementBaiting;
 
@@ -25,13 +26,32 @@ public class EngagementBaitingModule : EverestModule {
 #endif
     }
 
+    private DeathScreen deathScreen = new DeathScreen();
+
     public override void Load() {
         // TODO: apply any hooks that should always be active
-        On.Celeste.Player.Die += EngagementBaitingDeathScreen.ShowDeathScreen;
+        On.Celeste.HudRenderer.RenderContent += OnHudRenderHook;
+        On.Celeste.Player.Die += OnDeathHook;
     }
 
     public override void Unload() {
         // TODO: unapply any hooks applied in Load()
-        On.Celeste.Player.Die -= EngagementBaitingDeathScreen.ShowDeathScreen;
+        On.Celeste.HudRenderer.RenderContent -= OnHudRenderHook;
+        On.Celeste.Player.Die -= OnDeathHook;
+    }
+
+    private PlayerDeadBody OnDeathHook(On.Celeste.Player.orig_Die orig, Player self,
+                                              Vector2 direction, bool evenIfInvinsible,
+                                              bool registerDeathInStats) {
+        deathScreen.Show();
+
+        return orig(self, direction, evenIfInvinsible, registerDeathInStats);
+    }
+
+    private void OnHudRenderHook(On.Celeste.HudRenderer.orig_RenderContent orig, HudRenderer self, Monocle.Scene scene) {
+        orig(self, scene);
+
+        deathScreen.Update();
+        deathScreen.Render();
     }
 }
