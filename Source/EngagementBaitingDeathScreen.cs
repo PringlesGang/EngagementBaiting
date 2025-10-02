@@ -33,13 +33,17 @@ namespace Celeste.Mod.EngagementBaiting
         public void Render() {
             if (!isShowing) return;
 
+            float alpha = MathHelper.Clamp(showTime / fadeInTime, 0.0f, 1.0f);
+            Rectangle viewport = Draw.SpriteBatch.GraphicsDevice.Viewport.Bounds;
+
             Draw.SpriteBatch.Begin();
 
-            float alpha = MathHelper.Clamp(showTime / fadeInTime, 0.0f, 1.0f);
-            Color color = new Color(Color.White, alpha);
+            Texture2D background = new Texture2D(Draw.SpriteBatch.GraphicsDevice, 1, 1);
+            background.SetData(new Color[1] { Color.Black });
+            Draw.SpriteBatch.Draw(background, viewport, new Color(Color.White, alpha));
 
-            MTexture feedback = GFX.Game["EngagementBaiting/negativeFeedback"];
-            feedback.Draw(Vector2.Zero, Vector2.Zero, color);
+            ActiveFont.Draw("Haha get fucked", viewport.Center.ToVector2(), new Vector2(0.5f, 0.5f),
+                            Vector2.One, new Color(Color.White, alpha));
 
             Draw.SpriteBatch.End();
         }
