@@ -17,6 +17,7 @@ public class EngagementBaitingModule : EverestModule {
 
     public EngagementBaitingModule() {
         Instance = this;
+
 #if DEBUG
         // debug builds use verbose logging
         Logger.SetLogLevel(nameof(EngagementBaitingModule), LogLevel.Verbose);

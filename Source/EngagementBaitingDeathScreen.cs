@@ -3,68 +3,87 @@ using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
-namespace Celeste.Mod.EngagementBaiting
+namespace Celeste.Mod.EngagementBaiting;
+
+public enum DeathScreenFeedbackType
 {
-    internal class DeathScreen
-    {
-        private const float showDuration = 1.5f;
-        private const float fadeInTime = 0.5f;
+    Negative,
+    Neutral,
+    Positive
+}
 
-        private float showTime = 0.0f;
-        private bool isShowing = false;
+internal class DeathScreen
+{
+    private Dictionary<DeathScreenFeedbackType, List<String>> messages = new();
+    private String currentMessage = null;
 
-        private List<string> messages = new List<string>();
-        private int currentMessageId = 0;
+    private float showTime = 0.0f;
+    private bool isShowing = false;
 
-        private static Random rng = new Random();
+    private static Random rng = new Random();
 
-        public DeathScreen() {
-            const string messagePath = "./Mods/EngagementBaiting/Assets/negative_feedback.txt";
-            if (System.IO.File.Exists(messagePath)) {
-                messages.AddRange(System.IO.File.ReadAllLines(messagePath));
+    public DeathScreen() {
+        void AddMessages(DeathScreenFeedbackType type, String filePath) {
+            if (System.IO.File.Exists(filePath)) {
+                messages[type] = new List<String>(System.IO.File.ReadAllLines(filePath));
             } else {
-                Logger.Log(LogLevel.Error, "EngagementBaiting/DeathScreen", $"Message file not found: {messagePath}");
-                messages.Add("Failed to load messages file"); // Fallback string
+                Logger.Log(LogLevel.Error, "EngagementBaiting/DeathScreen", $"Message file not found: {filePath}");
+                messages[type] = new List<String> { "Failed to load messages file" }; // Fallback string
             }
         }
 
-        public void Show() {
-            isShowing = true;
+        const String basePath = "./mods/EngagementBaiting/Assets";
+        AddMessages(DeathScreenFeedbackType.Negative, Path.Combine(basePath, "negative_feedback.txt"));
+        AddMessages(DeathScreenFeedbackType.Positive, Path.Combine(basePath, "positive_feedback.txt"));
+    }
+
+    public void Show() {
+        if (!EngagementBaitingModule.Settings.Enabled) return;
+
+        DeathScreenFeedbackType feedbackType = EngagementBaitingModule.Settings.FeedbackType;
+
+        isShowing = true;
+        showTime = 0.0f;
+
+        if (feedbackType != DeathScreenFeedbackType.Neutral) {
+            currentMessage = messages[feedbackType][rng.Next(messages[feedbackType].Count)];
+            Logger.Log(LogLevel.Verbose, "EngagementBaiting/DeathScreen", $"Showing death screen message \"{currentMessage}\"");
+        } else {
+            currentMessage = null;
+            Logger.Log(LogLevel.Verbose, "EngagementBaiting/DeathScreen", "Showing neutral death screen");
+        }
+    }
+
+    public void Update() {
+        if (!isShowing) return;
+
+        showTime += Engine.RawDeltaTime;
+
+        if (showTime >= EngagementBaitingModule.Settings.Duration) {
+            isShowing = false;
             showTime = 0.0f;
-
-            currentMessageId = rng.Next(messages.Count);
-
-            Logger.Log(LogLevel.Verbose, "EngagementBaiting/DeathScreen", $"Showing death screen message \"{messages[currentMessageId]}\"");
         }
+    }
 
-        public void Update() {
-            if (!isShowing) return;
+    public void Render() {
+        if (!isShowing || !EngagementBaitingModule.Settings.Enabled) return;
 
-            showTime += Engine.RawDeltaTime;
+        float alpha = MathHelper.Clamp(showTime / EngagementBaitingModule.Settings.FadeInTime, 0.0f, 1.0f);
+        Rectangle viewport = Draw.SpriteBatch.GraphicsDevice.Viewport.Bounds;
 
-            if (showTime >= showDuration) {
-                isShowing = false;
-                showTime = 0.0f;
-            }
-        }
+        Draw.SpriteBatch.Begin();
 
-        public void Render() {
-            if (!isShowing) return;
+        Texture2D background = new Texture2D(Draw.SpriteBatch.GraphicsDevice, 1, 1);
+        background.SetData(new Color[1] { Color.Black });
+        Draw.SpriteBatch.Draw(background, viewport, new Color(Color.White, alpha));
 
-            float alpha = MathHelper.Clamp(showTime / fadeInTime, 0.0f, 1.0f);
-            Rectangle viewport = Draw.SpriteBatch.GraphicsDevice.Viewport.Bounds;
-
-            Draw.SpriteBatch.Begin();
-
-            Texture2D background = new Texture2D(Draw.SpriteBatch.GraphicsDevice, 1, 1);
-            background.SetData(new Color[1] { Color.Black });
-            Draw.SpriteBatch.Draw(background, viewport, new Color(Color.White, alpha));
-
-            ActiveFont.Draw(messages[currentMessageId], viewport.Center.ToVector2(),
+        if (currentMessage != null) {
+            ActiveFont.Draw(currentMessage, viewport.Center.ToVector2(),
                             new Vector2(0.5f, 0.5f), Vector2.One, new Color(Color.White, alpha));
-
-            Draw.SpriteBatch.End();
         }
+
+        Draw.SpriteBatch.End();
     }
 }
