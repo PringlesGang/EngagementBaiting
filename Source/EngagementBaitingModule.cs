@@ -45,6 +45,7 @@ public class EngagementBaitingModule : EverestModule {
                                               Vector2 direction, bool evenIfInvinsible,
                                               bool registerDeathInStats) {
         deathScreen.Show();
+        Logger.Log(LogLevel.Info, "EngagementBaiting", $"The player died at {self.Position.ToString()}");
 
         return orig(self, direction, evenIfInvinsible, registerDeathInStats);
     }

@@ -49,10 +49,10 @@ internal class DeathScreen
 
         if (feedbackType != DeathScreenFeedbackType.Neutral) {
             currentMessage = messages[feedbackType][rng.Next(messages[feedbackType].Count)];
-            Logger.Log(LogLevel.Verbose, "EngagementBaiting/DeathScreen", $"Showing death screen message \"{currentMessage}\"");
+            Logger.Log(LogLevel.Info, "EngagementBaiting/DeathScreen", $"Showing death screen message \"{currentMessage}\"");
         } else {
             currentMessage = null;
-            Logger.Log(LogLevel.Verbose, "EngagementBaiting/DeathScreen", "Showing neutral death screen");
+            Logger.Log(LogLevel.Info, "EngagementBaiting/DeathScreen", "Showing neutral death screen");
         }
     }
 
