@@ -33,6 +33,9 @@ for level_name, group in df.groupby("Level"):
         # A line showing the full path (optional, makes trajectory clearer)
         plt.plot(x, y, linewidth=0.5, alpha=0.5, color="gray")
 
+        # Add death markers
+        plt.scatter(x[-1], y[-1], color="red", marker="x", s=40, label="Death" if death == 0 else "")
+
     plt.title(f"Player Movement in Level: {level_name}")
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
