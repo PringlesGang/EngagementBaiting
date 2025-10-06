@@ -355,3 +355,5 @@ MigrationBackup/
 # JetBrains Rider
 .idea
 
+# Virtual Environment for Python projects
+**/venv/

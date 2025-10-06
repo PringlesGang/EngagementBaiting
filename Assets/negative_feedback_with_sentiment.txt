@@ -1,0 +1,18 @@
+haha get fucked - {'label': 'NEGATIVE', 'score': 0.9992058873176575}
+you suck lol - {'label': 'NEGATIVE', 'score': 0.9814907312393188}
+You are not a clown. You are the entire circus. - {'label': 'POSITIVE', 'score': 0.9922102689743042}
+Were you even trying? - {'label': 'NEGATIVE', 'score': 0.9965564012527466}
+You know dying isn't the goal, right? - {'label': 'NEGATIVE', 'score': 0.9957679510116577}
+Oh, sure, die again! See if I care - {'label': 'NEGATIVE', 'score': 0.9872899651527405}
+You're only wasting your own time, y'know - {'label': 'NEGATIVE', 'score': 0.999669075012207}
+Another one bites the dust - {'label': 'NEGATIVE', 'score': 0.9975351095199585}
+Don't give up. Or do, I don't care either way - {'label': 'NEGATIVE', 'score': 0.9839351773262024}
+
+
+These statements are classified as positive. This may be due to average entry in the database not containing information like this, since it is very nieche.
+Or it is seen as sarcastic. Either way, let's not use them. Can only cause confusion in our results.
+Touch grass - {'label': 'POSITIVE', 'score': 0.9991829991340637}
+Take your time - {'label': 'POSITIVE', 'score': 0.894005298614502}
+We've got alllll day - {'label': 'POSITIVE', 'score': 0.8481776714324951}
+Lmao - {'label': 'POSITIVE', 'score': 0.8618462681770325}
+You died, what a surprise - {'label': 'POSITIVE', 'score': 0.9941278696060181}

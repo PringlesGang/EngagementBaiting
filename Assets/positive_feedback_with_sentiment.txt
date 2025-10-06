@@ -1,0 +1,8 @@
+Try again! - {'label': 'POSITIVE', 'score': 0.7419360280036926}
+You're getting better - {'label': 'POSITIVE', 'score': 0.9995009899139404}
+Practice makes perfect - {'label': 'POSITIVE', 'score': 0.9998564720153809}
+Take your time - {'label': 'POSITIVE', 'score': 0.894005298614502}
+I believe in you - {'label': 'POSITIVE', 'score': 0.9997929930686951}
+You can do this - {'label': 'POSITIVE', 'score': 0.9997914433479309}
+
+As can be seen, there are some fluctuations in the sentiment score.
