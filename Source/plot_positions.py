@@ -23,12 +23,14 @@ for level_name, group in df.groupby("Level"):
         y = attempt["Y"].values
         t = attempt["SessionTime"].values
 
-        # Normalize time for colormap
-        norm = mcolors.Normalize(vmin=t.min(), vmax=t.max())
-        cmap = cm.viridis
+        # If not first attempt, then not include first coordinate since it is from previous attempt
+        if death != 0:
+            x = x[1:]
+            y = y[1:]
+            t = t[1:]
 
         # Create scatter plot with color = time
-        sc = plt.scatter(x, y, c=t, cmap=cmap, s=8, alpha=0.8)
+        plt.scatter(x, y, s=8, alpha=0.8)
 
         # A line showing the full path (optional, makes trajectory clearer)
         plt.plot(x, y, linewidth=0.5, alpha=0.5, color="gray")
@@ -40,8 +42,7 @@ for level_name, group in df.groupby("Level"):
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
     plt.gca().invert_yaxis()  # Celeste coordinate system: Y grows downward
-    plt.colorbar(sc, label="Session Time (s)")
     plt.grid(True)
-
+    plt.legend()
     plt.tight_layout()
     plt.show()
