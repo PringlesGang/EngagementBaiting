@@ -18,6 +18,9 @@ for level_name, group in reversed(list(df.groupby("Level"))):
 
     plt.figure(figsize=(8, 6))
 
+    # Get last session time to identify level transitions
+    last_time = group["SessionTime"].max()
+
     for death, attempt in group.groupby("Deaths"):
         x = attempt["X"].values
         y = attempt["Y"].values
@@ -29,14 +32,20 @@ for level_name, group in reversed(list(df.groupby("Level"))):
             y = y[1:]
             t = t[1:]
 
-        # Create scatter plot with color = time
-        plt.scatter(x, y, s=8, alpha=0.8)
+        # A line showing the full path with points
+        color = plt.gca()._get_lines.get_next_color()
+        plt.scatter(x, y, s=6, alpha=0.8, color=color)
+        plt.plot(x, y, linewidth=0.5, alpha=0.5, color=color)
 
-        # A line showing the full path (optional, makes trajectory clearer)
-        plt.plot(x, y, linewidth=0.5, alpha=0.5, color="gray")
-
-        # Add death markers
-        plt.scatter(x[-1], y[-1], color="red", marker="x", s=40, label="Death" if death == 0 else "")
+        # Add death markers except for when going to new level
+        if t[-1] != last_time:
+            # Only for the first death marker
+            if "Death" not in [h.get_label() for h in plt.gca().get_legend_handles_labels()[0]]:
+                plt.scatter(x[-1], y[-1], color="red", marker="x", s=40, label="Death")
+            else:
+                plt.scatter(x[-1], y[-1], color="red", marker="x", s=40)
+        else:
+            plt.scatter(x[-1], y[-1], color="green", marker="o", s=40, label="Level End")
 
     plt.title(f"Player Movement in Level: {level_name}")
     plt.xlabel("X Position")
