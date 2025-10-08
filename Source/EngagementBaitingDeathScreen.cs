@@ -34,7 +34,7 @@ internal class DeathScreen
             }
         }
 
-        const String basePath = "./mods/EngagementBaiting/Assets";
+        const String basePath = "./Mods/EngagementBaiting/Assets";
         AddMessages(DeathScreenFeedbackType.Negative, Path.Combine(basePath, "negative_feedback.txt"));
         AddMessages(DeathScreenFeedbackType.Positive, Path.Combine(basePath, "positive_feedback.txt"));
     }
