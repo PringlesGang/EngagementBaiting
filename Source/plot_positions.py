@@ -34,7 +34,7 @@ for level_name, group in reversed(list(df.groupby("Level"))):
 
         # A line showing the full path with points
         color = plt.gca()._get_lines.get_next_color()
-        plt.scatter(x, y, s=6, alpha=0.8, color=color)
+        plt.scatter(x, y, s=2, alpha=0.8, color=color)
         plt.plot(x, y, linewidth=0.5, alpha=0.5, color=color)
 
         # Add death markers except for when going to new level
