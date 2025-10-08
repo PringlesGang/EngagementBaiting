@@ -12,7 +12,7 @@ df = pd.read_csv(csv_file, parse_dates=["Timestamp"])
 df = df.sort_values(by=["Level", "SessionTime"]).reset_index(drop=True)
 
 # Group by Level
-for level_name, group in df.groupby("Level"):
+for level_name, group in reversed(list(df.groupby("Level"))):
     if group.empty:
         continue
 
