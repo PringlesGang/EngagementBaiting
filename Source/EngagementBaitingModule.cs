@@ -32,17 +32,23 @@ public class EngagementBaitingModule : EverestModule {
     public override void Load() {
         EBLogger.NewFile();
 
-        // TODO: apply any hooks that should always be active
         On.Celeste.HudRenderer.RenderContent += OnHudRenderHook;
+
         On.Celeste.Player.Die += OnDeathHook;
+
+        On.Celeste.Level.LoadLevel += OnLoadScreenHook;
+        On.Celeste.LevelExit.ctor += OnLevelExitHook;
     }
 
     public override void Unload() {
         EBLogger.CloseFile();
 
-        // TODO: unapply any hooks applied in Load()
         On.Celeste.HudRenderer.RenderContent -= OnHudRenderHook;
+
         On.Celeste.Player.Die -= OnDeathHook;
+
+        On.Celeste.Level.LoadLevel -= OnLoadScreenHook;
+        On.Celeste.LevelExit.ctor -= OnLevelExitHook;
     }
 
     private PlayerDeadBody OnDeathHook(On.Celeste.Player.orig_Die orig, Player self,
@@ -59,5 +65,20 @@ public class EngagementBaitingModule : EverestModule {
 
         deathScreen.Update();
         deathScreen.Render();
+    }
+
+    private void OnLoadScreenHook(On.Celeste.Level.orig_LoadLevel orig, Level level, Player.IntroTypes playerIntroType, bool isFromLoader)
+    {
+        EBLogger.Log($"Entering screen \"{level.Session.Level}\"");
+
+        orig(level, playerIntroType, isFromLoader);
+    }
+
+    private void OnLevelExitHook(On.Celeste.LevelExit.orig_ctor orig, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow)
+    {
+        EBLogger.Log("Ending level");
+        EBLogger.NewFile();
+
+        orig(exit, mode, session, snow);
     }
 }
