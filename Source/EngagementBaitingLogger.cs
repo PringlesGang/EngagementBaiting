@@ -7,7 +7,7 @@ namespace Celeste.Mod.EngagementBaiting;
 
 internal static class EBLogger
 {
-    public static String LogPath { get; private set; }
+    public static String LogPath { get; private set; } = null;
 
     private static FileStream fileStream;
     private static StreamWriter fileWriter;
@@ -45,6 +45,8 @@ internal static class EBLogger
 
     public static void CloseFile()
     {
+        if (LogPath == null) return;
+
         // Wait for all log threads to finish
         foreach (Thread thread in logThreads)
         {
@@ -54,13 +56,30 @@ internal static class EBLogger
 
         fileMutex.WaitOne();
 
+        fileWriter?.Flush();
         fileWriter?.Dispose();
         fileWriter = null;
 
         fileStream?.Dispose();
         fileStream = null;
 
+        // Automatically delete empty log files
+        FileInfo fileInfo = new FileInfo(LogPath);
+        if (fileInfo.Exists && fileInfo.Length == 0)
+        {
+            try
+            {
+                File.Delete(LogPath);
+            }
+            catch (Exception e)
+            {
+                Logger.Log(LogLevel.Error, "EngagementBaiting/Logger", $"Failed to delete empty log file {LogPath}: {e}");
+            }
+        }
+
         fileMutex.ReleaseMutex();
+
+        LogPath = null;
     }
 
     public static void Log(String message)
@@ -81,10 +100,7 @@ internal static class EBLogger
     private static void WriteLine(String logLine)
     {
         fileMutex.WaitOne();
-
         fileWriter.WriteLine(logLine);
-        fileWriter.Flush();
-
         fileMutex.ReleaseMutex();
 
         logThreads.Remove(Thread.CurrentThread);
