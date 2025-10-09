@@ -30,10 +30,14 @@ public class EngagementBaitingModule : EverestModule {
     }
 
     public override void Load() {
+        FileManager.BackupFiles();
+
         EBLogger.NewFile();
+        PositionLogger.NewFile();
 
         On.Celeste.HudRenderer.RenderContent += OnHudRenderHook;
 
+        On.Celeste.Player.Update += OnPlayerUpdateHook;
         On.Celeste.Player.Die += OnDeathHook;
 
         On.Celeste.Level.LoadLevel += OnLoadScreenHook;
@@ -42,13 +46,24 @@ public class EngagementBaitingModule : EverestModule {
 
     public override void Unload() {
         EBLogger.CloseFile();
+        PositionLogger.CloseFile();
 
         On.Celeste.HudRenderer.RenderContent -= OnHudRenderHook;
 
+        On.Celeste.Player.Update -= OnPlayerUpdateHook;
         On.Celeste.Player.Die -= OnDeathHook;
 
         On.Celeste.Level.LoadLevel -= OnLoadScreenHook;
         On.Celeste.LevelExit.ctor -= OnLevelExitHook;
+
+        FileManager.BackupFiles();
+    }
+
+    private void OnPlayerUpdateHook(On.Celeste.Player.orig_Update orig, Player self)
+    {
+        orig(self);
+
+        PositionLogger.Log(self);
     }
 
     private PlayerDeadBody OnDeathHook(On.Celeste.Player.orig_Die orig, Player self,
