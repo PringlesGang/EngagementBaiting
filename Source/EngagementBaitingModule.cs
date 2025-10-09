@@ -15,6 +15,8 @@ public class EngagementBaitingModule : EverestModule {
     public override Type SaveDataType => typeof(EngagementBaitingModuleSaveData);
     public static EngagementBaitingModuleSaveData SaveData => (EngagementBaitingModuleSaveData) Instance._SaveData;
 
+    private DeathScreen deathScreen = new();
+
     public EngagementBaitingModule() {
         Instance = this;
 
@@ -27,15 +29,17 @@ public class EngagementBaitingModule : EverestModule {
 #endif
     }
 
-    private DeathScreen deathScreen = new DeathScreen();
-
     public override void Load() {
+        EBLogger.NewFile();
+
         // TODO: apply any hooks that should always be active
         On.Celeste.HudRenderer.RenderContent += OnHudRenderHook;
         On.Celeste.Player.Die += OnDeathHook;
     }
 
     public override void Unload() {
+        EBLogger.CloseFile();
+
         // TODO: unapply any hooks applied in Load()
         On.Celeste.HudRenderer.RenderContent -= OnHudRenderHook;
         On.Celeste.Player.Die -= OnDeathHook;
@@ -45,7 +49,7 @@ public class EngagementBaitingModule : EverestModule {
                                               Vector2 direction, bool evenIfInvinsible,
                                               bool registerDeathInStats) {
         deathScreen.Show();
-        Logger.Log(LogLevel.Info, "EngagementBaiting", $"The player died at {self.Position.ToString()}");
+        EBLogger.Log($"The player died at {self.Position.ToString()}");
 
         return orig(self, direction, evenIfInvinsible, registerDeathInStats);
     }
