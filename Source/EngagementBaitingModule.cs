@@ -42,6 +42,8 @@ public class EngagementBaitingModule : EverestModule {
 
         On.Celeste.Level.LoadLevel += OnLoadScreenHook;
         On.Celeste.LevelExit.ctor += OnLevelExitHook;
+
+        On.Celeste.Celeste.OnExiting += OnGameExitHook;
     }
 
     public override void Unload() {
@@ -55,6 +57,8 @@ public class EngagementBaitingModule : EverestModule {
 
         On.Celeste.Level.LoadLevel -= OnLoadScreenHook;
         On.Celeste.LevelExit.ctor -= OnLevelExitHook;
+
+        On.Celeste.Celeste.OnExiting -= OnGameExitHook;
 
         FileManager.BackupFiles();
     }
@@ -95,5 +99,14 @@ public class EngagementBaitingModule : EverestModule {
         EBLogger.NewFile();
 
         orig(exit, mode, session, snow);
+    }
+
+    private void OnGameExitHook(On.Celeste.Celeste.orig_OnExiting orig, global::Celeste.Celeste self, object sender, System.EventArgs args)
+    {
+        EBLogger.CloseFile();
+        PositionLogger.CloseFile();
+        FileManager.BackupFiles();
+
+        orig(self, sender, args);
     }
 }
