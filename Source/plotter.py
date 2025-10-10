@@ -25,7 +25,7 @@ def extract_archives(archive_path):
 
         # Find EngagementBaiting-*.log
         log_files = glob.glob(os.path.join(folder_path, "EngagementBaiting-*.log"))
-        log_path = log_files[0] if log_files else None
+        log_path = log_files if log_files else None
 
         results.append((csv_path, log_path))
     return results
@@ -93,5 +93,5 @@ if __name__ == "__main__":
     archives = extract_archives(archive_path)
     print(archives)
 
-    for csv_path, log_path in archives:
+    for csv_path, log_paths in archives:
         plot_player_paths(csv_path)
