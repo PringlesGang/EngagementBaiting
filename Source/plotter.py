@@ -23,7 +23,7 @@ def extract_archives(archive_path):
         if not os.path.isfile(csv_path):
             continue
 
-        # Find EngagementBaiting-*.log (there may be multiple, pick the first)
+        # Find EngagementBaiting-*.log
         log_files = glob.glob(os.path.join(folder_path, "EngagementBaiting-*.log"))
         log_path = log_files[0] if log_files else None
 
