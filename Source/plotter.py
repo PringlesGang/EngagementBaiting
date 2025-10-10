@@ -2,8 +2,25 @@ import pandas as pd
 import os
 import glob
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
+import matplotlib.image as mpimg
+
+
+# Variables
+REAL_SCALAR = 8
+LEVEL_DATA = {
+    "StartWalkRoomTutorial": {"img": "./Maps/Images/Tutorial.png", "offset": (-74, -68)},
+    "JumpRoomTutorial": {"img": "./Maps/Images/Tutorial.png", "offset": (-74, -68)},
+    "SecondRoomTutorial": {"img": "./Maps/Images/Tutorial.png", "offset": (-74, -68)},
+    "FourthDashRoomTutorial": {"img": "./Maps/Images/Tutorial.png", "offset": (-74, -68)},
+    "SpringRoom": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
+    "SpringRoom2": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
+    "Boosterroom1": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
+    "Boosterroom2": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
+    "Boosterroom3": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
+    "CloudAndFeatherRoom": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
+    "CloudAndFeatherRoom2": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
+    "FinalRoom": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
+}
 
 
 def extract_archives(archive_path):
@@ -30,7 +47,7 @@ def extract_archives(archive_path):
         results.append((csv_path, log_path))
     return results
 
-def plot_player_paths(csv_file):
+def plot_player_paths(csv_file, graph_offset=50):
     """
     Plot player path from the given CSV file.
     """
@@ -47,13 +64,23 @@ def plot_player_paths(csv_file):
 
         plt.figure(figsize=(8, 6))
 
-        # Get last session time to identify level transitions
-        last_time = group["SessionTime"].max()
+        # Get image and offset info
+        level_info = LEVEL_DATA.get(level_name, {"img": "./Maps/Images/Tutorial.png", "offset": None})
+        img_path = level_info["img"]
+        img = mpimg.imread(img_path)
+        # img = img[::-1, :]  # Flip vertically
+        if level_info["offset"]:
+            x, y = level_info["offset"]
+            x, y = x * REAL_SCALAR, y * REAL_SCALAR
+            extent = [x, img.shape[1]+x, img.shape[0]+y, y]
+        else:
+            extent = [0, img.shape[1], img.shape[0], 0]
+
+        plt.imshow(img, extent=extent, origin="upper")
 
         for death, attempt in group.groupby("Deaths"):
             x = attempt["X"].values
             y = attempt["Y"].values
-            t = attempt["SessionTime"].values
 
             if len(x) < 2: # Not enough data to plot
                 continue
@@ -62,7 +89,6 @@ def plot_player_paths(csv_file):
             if death != 0:
                 x = x[1:]
                 y = y[1:]
-                t = t[1:]
 
             # A line showing the full path with points
             color = plt.gca()._get_lines.get_next_color()
@@ -70,28 +96,32 @@ def plot_player_paths(csv_file):
             plt.plot(x, y, linewidth=0.5, alpha=0.5, color=color)
 
             # Add death markers except for when going to new level
-            if t[-1] != last_time:
+            if attempt["SessionTime"].iloc[-1] == group["SessionTime"].max():
+                plt.scatter(x[-1], y[-1], color="green", marker="o", s=40, label="Level End")
+            else:
                 # Only for the first death marker
                 if "Death" not in [h.get_label() for h in plt.gca().get_legend_handles_labels()[0]]:
                     plt.scatter(x[-1], y[-1], color="red", marker="x", s=40, label="Death")
                 else:
                     plt.scatter(x[-1], y[-1], color="red", marker="x", s=40)
-            else:
-                plt.scatter(x[-1], y[-1], color="green", marker="o", s=40, label="Level End")
+                
+        # Zoom in on the player area
+        plt.xlim(group["X"].min() - graph_offset, group["X"].max() + graph_offset)
+        plt.ylim(group["Y"].max() + graph_offset, group["Y"].min() - graph_offset)
 
+        # Add title and labels
         plt.title(f"Player Movement in Level: {level_name}")
         plt.xlabel("X Position")
         plt.ylabel("Y Position")
-        plt.gca().invert_yaxis()  # Celeste coordinate system: Y grows downward
         plt.grid(True)
         plt.legend()
         plt.tight_layout()
         plt.show()
 
+
 if __name__ == "__main__":
     archive_path = "./Logs/Archived/"
     archives = extract_archives(archive_path)
-    print(archives)
 
     for csv_path, log_paths in archives:
         plot_player_paths(csv_path)
