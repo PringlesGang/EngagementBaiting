@@ -15,6 +15,8 @@ public class EngagementBaitingModule : EverestModule {
     public override Type SaveDataType => typeof(EngagementBaitingModuleSaveData);
     public static EngagementBaitingModuleSaveData SaveData => (EngagementBaitingModuleSaveData) Instance._SaveData;
 
+    private DeathScreen deathScreen = new();
+
     public EngagementBaitingModule() {
         Instance = this;
 
@@ -27,25 +29,52 @@ public class EngagementBaitingModule : EverestModule {
 #endif
     }
 
-    private DeathScreen deathScreen = new DeathScreen();
-
     public override void Load() {
-        // TODO: apply any hooks that should always be active
+        FileManager.BackupFiles();
+
+        EBLogger.NewFile();
+        PositionLogger.NewFile();
+
         On.Celeste.HudRenderer.RenderContent += OnHudRenderHook;
+
+        On.Celeste.Player.Update += OnPlayerUpdateHook;
         On.Celeste.Player.Die += OnDeathHook;
+
+        On.Celeste.Level.LoadLevel += OnLoadScreenHook;
+        On.Celeste.LevelExit.ctor += OnLevelExitHook;
+
+        On.Celeste.Celeste.OnExiting += OnGameExitHook;
     }
 
     public override void Unload() {
-        // TODO: unapply any hooks applied in Load()
+        EBLogger.CloseFile();
+        PositionLogger.CloseFile();
+
         On.Celeste.HudRenderer.RenderContent -= OnHudRenderHook;
+
+        On.Celeste.Player.Update -= OnPlayerUpdateHook;
         On.Celeste.Player.Die -= OnDeathHook;
+
+        On.Celeste.Level.LoadLevel -= OnLoadScreenHook;
+        On.Celeste.LevelExit.ctor -= OnLevelExitHook;
+
+        On.Celeste.Celeste.OnExiting -= OnGameExitHook;
+
+        FileManager.BackupFiles();
+    }
+
+    private void OnPlayerUpdateHook(On.Celeste.Player.orig_Update orig, Player self)
+    {
+        orig(self);
+
+        PositionLogger.Log(self);
     }
 
     private PlayerDeadBody OnDeathHook(On.Celeste.Player.orig_Die orig, Player self,
                                               Vector2 direction, bool evenIfInvinsible,
                                               bool registerDeathInStats) {
         deathScreen.Show();
-        Logger.Log(LogLevel.Info, "EngagementBaiting", $"The player died at {self.Position.ToString()}");
+        EBLogger.Log($"The player died at {self.Position.ToString()}");
 
         return orig(self, direction, evenIfInvinsible, registerDeathInStats);
     }
@@ -55,5 +84,29 @@ public class EngagementBaitingModule : EverestModule {
 
         deathScreen.Update();
         deathScreen.Render();
+    }
+
+    private void OnLoadScreenHook(On.Celeste.Level.orig_LoadLevel orig, Level level, Player.IntroTypes playerIntroType, bool isFromLoader)
+    {
+        EBLogger.Log($"Entering screen \"{level.Session.Level}\"");
+
+        orig(level, playerIntroType, isFromLoader);
+    }
+
+    private void OnLevelExitHook(On.Celeste.LevelExit.orig_ctor orig, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow)
+    {
+        EBLogger.Log("Ending level");
+        EBLogger.NewFile();
+
+        orig(exit, mode, session, snow);
+    }
+
+    private void OnGameExitHook(On.Celeste.Celeste.orig_OnExiting orig, global::Celeste.Celeste self, object sender, System.EventArgs args)
+    {
+        EBLogger.CloseFile();
+        PositionLogger.CloseFile();
+        FileManager.BackupFiles();
+
+        orig(self, sender, args);
     }
 }
