@@ -101,12 +101,12 @@ internal class DeathScreen
         background.SetData(new Color[1] { Color.Black });
         try
         {
-            Draw.SpriteBatch.Draw(background, viewport, new Color(Color.White, alpha));
+            Draw.SpriteBatch.Draw(background, viewport, Color.White * alpha);
 
             if (currentMessage != null)
             {
                 ActiveFont.Draw(currentMessage, viewport.Center.ToVector2(),
-                                new Vector2(0.5f, 0.5f), Vector2.One, new Color(Color.White, alpha));
+                                new Vector2(0.5f, 0.5f), Vector2.One, Color.White * alpha);
             }
         }
         catch (Exception e)
