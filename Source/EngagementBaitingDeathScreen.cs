@@ -77,13 +77,19 @@ internal class DeathScreen
 
         Texture2D background = new Texture2D(Draw.SpriteBatch.GraphicsDevice, 1, 1);
         background.SetData(new Color[1] { Color.Black });
-        Draw.SpriteBatch.Draw(background, viewport, new Color(Color.White, alpha));
+        try
+        {
+            Draw.SpriteBatch.Draw(background, viewport, new Color(Color.White, alpha));
 
-        if (currentMessage != null) {
-            ActiveFont.Draw(currentMessage, viewport.Center.ToVector2(),
-                            new Vector2(0.5f, 0.5f), Vector2.One, new Color(Color.White, alpha));
+            if (currentMessage != null)
+            {
+                ActiveFont.Draw(currentMessage, viewport.Center.ToVector2(),
+                                new Vector2(0.5f, 0.5f), Vector2.One, new Color(Color.White, alpha));
+            }
         }
-
+        catch (Exception e)
+        {
+        }
         Draw.SpriteBatch.End();
     }
 }

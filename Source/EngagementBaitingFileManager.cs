@@ -77,16 +77,16 @@ internal static class FileManager
 
         Vector2 justify = new Vector2(1.0f + 15.0f / Engine.Width, 15.0f / Engine.Height);
 
+        Draw.SpriteBatch.Begin();
         try
         {
-            Draw.SpriteBatch.Begin();
             ActiveFont.Draw(DisplayMessage, new Vector2(Engine.Width, 0.0f), justify,
                             new Vector2(0.5f, 0.5f), Color.White * alpha);
-            Draw.SpriteBatch.End();
         }
         catch (Exception e)
         {
         }
+        Draw.SpriteBatch.End();
     }
 
     private static void CloseFiles()
