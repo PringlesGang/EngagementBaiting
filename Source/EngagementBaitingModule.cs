@@ -93,7 +93,7 @@ public class EngagementBaitingModule : EverestModule {
     private void OnLevelExitHook(On.Celeste.LevelExit.orig_ctor orig, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow)
     {
         EBLogger.Log("Ending level");
-        EBLogger.NewFile();
+        EBLogger.CloseFile();
 
         orig(exit, mode, session, snow);
     }

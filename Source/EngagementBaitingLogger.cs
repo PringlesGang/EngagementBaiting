@@ -14,7 +14,7 @@ internal static class EBLogger
     private static Mutex fileMutex = new();
     private static HashSet<Thread> logThreads = new();
 
-    public static void NewFile()
+    private static void NewFile()
     {
         CloseFile();
 
@@ -88,8 +88,7 @@ internal static class EBLogger
 
         if (fileWriter == null)
         {
-            Logger.Log(LogLevel.Warn, "EngagementBaiting/Logger", $"EB log file not open, cannot log message \"{logLine}\"");
-            return;
+            NewFile();
         }
 
         Thread thread = new Thread(() => WriteLine(logLine));

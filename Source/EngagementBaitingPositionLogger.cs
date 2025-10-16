@@ -10,7 +10,7 @@ internal static class PositionLogger {
     private static StreamWriter csv;
     public static string outPath { get; private set; } = null;
 
-    public static void NewFile() {
+    private static void NewFile() {
         CloseFile();
 
         // Output CSV file in Mods folder
@@ -31,6 +31,16 @@ internal static class PositionLogger {
         outPath = null;
     }
 
+    private static void Write(string value)
+    {
+        if (csv == null)
+        {
+            NewFile();
+        }
+
+        csv.WriteLine(value);
+    }
+
     public static void Log(Player self) {
         try {
             Vector2 pos = self.Position;
@@ -46,7 +56,7 @@ internal static class PositionLogger {
             }
 
             string row = $"{DateTime.UtcNow:o},{levelName},{pos.X:F3},{pos.Y:F3},{sessionTime:F3},{deaths}";
-            csv.WriteLine(row);
+            Write(row);
         } catch (Exception e) {
             Logger.Log(LogLevel.Warn, "PositionLogger", "Error: " + e);
         }
