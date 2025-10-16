@@ -67,6 +67,8 @@ internal class DeathScreen
         }
 
         currentMessage = messageStack.Pop();
+        string typeString = type == DeathScreenFeedbackType.Negative ? "negative" : "positive";
+        EBLogger.Log($"Showing {typeString} death screen message \"{currentMessage}\"");
     }
 
     public void Show() {
