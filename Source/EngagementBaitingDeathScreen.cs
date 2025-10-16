@@ -17,7 +17,9 @@ public enum DeathScreenFeedbackType
 internal class DeathScreen
 {
     private Dictionary<DeathScreenFeedbackType, List<String>> messages = new();
+    private Stack<String> messageStack = new();
     private String currentMessage = null;
+    private DeathScreenFeedbackType currentFeedbackType = DeathScreenFeedbackType.Neutral;
 
     private float showTime = 0.0f;
     private bool isShowing = false;
@@ -39,21 +41,43 @@ internal class DeathScreen
         AddMessages(DeathScreenFeedbackType.Positive, Path.Combine(basePath, "positive_feedback.txt"));
     }
 
+    private void SelectMessage(DeathScreenFeedbackType type) {
+        if (type == DeathScreenFeedbackType.Neutral) {
+            currentMessage = null;
+            currentFeedbackType = DeathScreenFeedbackType.Neutral;
+            EBLogger.Log("Showing neutral death screen");
+            return;
+        }
+
+        if (type != currentFeedbackType || messageStack.Count == 0)
+        {
+            currentFeedbackType = type;
+
+            // Refill stack with shuffled messages
+            List<string> permutation = new List<string>(messages[type]);
+            for (int toPlaceCount = permutation.Count; toPlaceCount > 1; toPlaceCount--) {
+                int selected = rng.Next(toPlaceCount);
+                (permutation[selected], permutation[toPlaceCount - 1]) = (permutation[toPlaceCount - 1], permutation[selected]);
+            }
+
+            messageStack.Clear();
+            foreach (String msg in permutation) {
+                messageStack.Push(msg);
+            }
+        }
+
+        currentMessage = messageStack.Pop();
+        string typeString = type == DeathScreenFeedbackType.Negative ? "negative" : "positive";
+        EBLogger.Log($"Showing {typeString} death screen message \"{currentMessage}\"");
+    }
+
     public void Show() {
         if (!EngagementBaitingModule.Settings.Enabled) return;
-
-        DeathScreenFeedbackType feedbackType = EngagementBaitingModule.Settings.FeedbackType;
 
         isShowing = true;
         showTime = 0.0f;
 
-        if (feedbackType != DeathScreenFeedbackType.Neutral) {
-            currentMessage = messages[feedbackType][rng.Next(messages[feedbackType].Count)];
-            EBLogger.Log($"Showing death screen message \"{currentMessage}\"");
-        } else {
-            currentMessage = null;
-            EBLogger.Log("Showing neutral death screen");
-        }
+        SelectMessage(EngagementBaitingModule.Settings.FeedbackType);
     }
 
     public void Update() {
@@ -79,12 +103,12 @@ internal class DeathScreen
         background.SetData(new Color[1] { Color.Black });
         try
         {
-            Draw.SpriteBatch.Draw(background, viewport, new Color(Color.White, alpha));
+            Draw.SpriteBatch.Draw(background, viewport, Color.White * alpha);
 
             if (currentMessage != null)
             {
                 ActiveFont.Draw(currentMessage, viewport.Center.ToVector2(),
-                                new Vector2(0.5f, 0.5f), Vector2.One, new Color(Color.White, alpha));
+                                new Vector2(0.5f, 0.5f), Vector2.One, Color.White * alpha);
             }
         }
         catch (Exception e)

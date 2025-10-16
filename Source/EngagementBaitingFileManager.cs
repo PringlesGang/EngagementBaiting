@@ -95,12 +95,6 @@ internal static class FileManager
         PositionLogger.CloseFile();
     }
 
-    private static void NewFiles()
-    {
-        EBLogger.NewFile();
-        PositionLogger.NewFile();
-    }
-
     public static void BackupFiles()
     {
         CloseFiles();
@@ -136,8 +130,6 @@ internal static class FileManager
             DisplayMessage = success ? $"Saved logs to {nowString}" : "Failed to save logs";
         }
         DisplayTime = 0.0f;
-
-        NewFiles();
     }
 
     private static bool CreateDirectory(string path)
