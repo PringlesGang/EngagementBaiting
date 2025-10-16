@@ -23,12 +23,13 @@ LEVEL_DATA = {
 }
 
 
-def extract_archives(archive_path):
+def extract_archives(archive_path: str) -> dict:
     """
     Extract all PlayerPositions.csv and EngagementBaiting-*.log files from every folder in the archive_path.
     Returns a list of tuples: (csv_path, log_path) for each folder found.
     """
-    results = []
+    user_id = 0 # TEMP until user ID is added to logs
+    results = dict()
     # Each subfolder is named after the date and time it was saved
     for subdir in os.listdir(archive_path):
         folder_path = os.path.join(archive_path, subdir)
@@ -44,10 +45,38 @@ def extract_archives(archive_path):
         log_files = glob.glob(os.path.join(folder_path, "EngagementBaiting-*.log"))
         log_path = log_files if log_files else None
 
-        results.append((csv_path, log_path))
+        # TODO: Input user logic here if needed
+        results[user_id] = (csv_path, log_path)
+        user_id += 1 
     return results
 
-def plot_player_paths(csv_file, graph_offset=50):
+def extract_logdata(log_path: str) -> pd.DataFrame:
+    """
+    Extract log data from a single log file into a DataFrame.
+    """
+    if not os.path.isfile(log_path):
+        return pd.DataFrame()
+
+    log_df = None # Implement log extraction preprocessing here
+    return log_df
+
+def combine_log_user(archives: dict) -> pd.DataFrame:
+    """
+    Combine multiple log files for a single user into one DataFrame.
+    """
+    user_logs = []
+    for csv_path, log_paths in archives.values():
+        if log_paths:
+            for log_path in log_paths:
+                log_df = extract_logdata(log_path)
+                user_logs.append(log_df)
+
+    if user_logs:
+        return pd.concat(user_logs, ignore_index=True)
+
+    return pd.DataFrame()
+
+def plot_player_paths(csv_file: str, graph_offset: int = 50) -> None:
     """
     Plot player path from the given CSV file.
     """
@@ -68,7 +97,7 @@ def plot_player_paths(csv_file, graph_offset=50):
         level_info = LEVEL_DATA.get(level_name, {"img": "./Maps/Images/Tutorial.png", "offset": None})
         img_path = level_info["img"]
         img = mpimg.imread(img_path)
-        # img = img[::-1, :]  # Flip vertically
+        
         if level_info["offset"]:
             x, y = level_info["offset"]
             x, y = x * REAL_SCALAR, y * REAL_SCALAR
@@ -123,5 +152,5 @@ if __name__ == "__main__":
     archive_path = "./Logs/Archived/"
     archives = extract_archives(archive_path)
 
-    for csv_path, log_paths in archives:
+    for csv_path, log_paths in archives.values():
         plot_player_paths(csv_path)
