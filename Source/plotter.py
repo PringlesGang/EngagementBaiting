@@ -12,14 +12,14 @@ LEVEL_DATA = {
     "JumpRoomTutorial": {"img": "./Maps/Images/Tutorial.png", "offset": (-74, -68)},
     "SecondRoomTutorial": {"img": "./Maps/Images/Tutorial.png", "offset": (-74, -68)},
     "FourthDashRoomTutorial": {"img": "./Maps/Images/Tutorial.png", "offset": (-74, -68)},
-    "SpringRoom": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
-    "SpringRoom2": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
-    "Boosterroom1": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
-    "Boosterroom2": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
-    "Boosterroom3": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
-    "CloudAndFeatherRoom": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
-    "CloudAndFeatherRoom2": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
-    "FinalRoom": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -162)},
+    "SpringRoom": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -167)},
+    "SpringRoom2": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -167)},
+    "Boosterroom1": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -167)},
+    "Boosterroom2": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -167)},
+    "Boosterroom3": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -167)},
+    "CloudAndFeatherRoom": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -167)},
+    "CloudAndFeatherRoom2": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -167)},
+    "FinalRoom": {"img": "./Maps/Images/Final-Level.png", "offset": (-56, -167)},
 }
 
 
