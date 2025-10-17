@@ -64,7 +64,6 @@ def get_level_info_by_room(room_name: str) -> LevelInfo | None:
 def extract_archives(archive_path: str) -> dict:
     """
     Extract all PlayerPositions.csv and EngagementBaiting-*.log files from every folder in the archive_path.
-    Returns a list of tuples: (csv_path, log_path) for each folder found.
     """
     user_id = 0 # TEMP until user ID is added to logs
     results = dict()
@@ -158,7 +157,7 @@ def combine_log_user(log_paths: list) -> pd.DataFrame:
         return pd.concat(user_logs, ignore_index=True)
     return user_logs
 
-def get_img_level(level_name: str):
+def get_img_level(level_name: str) -> tuple[LevelInfo, any, list]:
     """
     create image and extent for plotting based on level name
     """
@@ -235,12 +234,9 @@ def plot_player_paths(csv_file: str, graph_path: str, graph_offset: int = 50, sh
         plt.grid(True)
         plt.legend()
         plt.tight_layout()
+        plt.savefig(os.path.join(graph_path, f"PlayerPath_{level_name}.png"))
         if show_plot:
             plt.show()
-        if graph_path:
-            # ensure the target directory exists
-            os.makedirs(graph_path, exist_ok=True)
-            plt.savefig(os.path.join(graph_path, f"PlayerPath_{level_name}.pdf"))
         plt.close()
 
 def total_death_bar_plot(log_dfs: list, graph_path: str, show_plot: bool = False) -> None:
@@ -268,35 +264,118 @@ def total_death_bar_plot(log_dfs: list, graph_path: str, show_plot: bool = False
         plt.ylabel("Number of Deaths")
         plt.xticks(rotation=45, ha='right') # Rotate x labels for better readability
         plt.tight_layout()
+        plt.savefig(os.path.join(graph_path, f"TotalDeaths_{level_name}.png"))
         if show_plot:
             plt.show()
-        if graph_path:
-            plt.savefig(os.path.join(graph_path, f"TotalDeaths_{level_name}.pdf"))
         plt.close()
 
-def generate_reports(archive_path: str, graph_path: str, show_bar_plot: bool = False, show_path_plot: bool = False) -> None:
+def plot_deaths_per_floor(log_dfs: list, graph_path: str, show_plot: bool = False, individual_plots: bool = False, graph_offset: int = 100) -> None:
+    """
+    Create one image per room showing all player deaths in that room.
+    """
+    combined_dir = os.path.join(graph_path, "combined_deaths")
+    os.makedirs(combined_dir, exist_ok=True)
+    individual_dir = os.path.join(combined_dir, "individual_floors")
+    os.makedirs(individual_dir, exist_ok=True)
+
+    n_players = len(log_dfs)
+    cmap = plt.get_cmap('tab20', max(1, n_players))
+
+    # Iterate all known rooms (use reverse index)
+    all_rooms = sorted(ROOM_TO_LEVEL.keys())
+
+    all_deaths = dict()
+    for room in all_rooms:
+        # Get full level background for this room
+        level_info, img, extent = get_img_level(room)
+
+        if level_info.name not in all_deaths:
+            all_deaths[level_info.name] = (img, extent, [])
+
+        plt.figure(figsize=(10, 6))
+        plt.imshow(img, extent=extent, origin='upper')
+
+        # Plot deaths from each player with a consistent color
+        for pid, df in enumerate(log_dfs):
+            room_df = df[df['room'] == room]
+            if room_df.empty:
+                continue
+            xs = room_df['x'].values
+            ys = room_df['y'].values
+            all_deaths[level_info.name][2].append((pid, xs, ys))
+
+            color = cmap(pid)
+            plt.scatter(xs, ys, color=color, marker='x', s=40, label=f'player_{pid}')
+
+        plt.title(f"Deaths on Floor: {room}  (Level: {level_info.name})")
+        plt.xlabel('X Position')
+        plt.ylabel('Y Position')
+        plt.grid(True)
+
+        # Combine all df data for this room
+        combined_df = pd.concat([df[df['room'] == room] for df in log_dfs if not df.empty], ignore_index=True)
+
+        # Zoom in on the player area
+        if not combined_df.empty:
+            plt.xlim(combined_df["x"].min() - graph_offset, combined_df["x"].max() + graph_offset)
+            plt.ylim(combined_df["y"].max() + graph_offset, combined_df["y"].min() - graph_offset)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(individual_dir, f"Deaths_{room}.png"))
+        if individual_plots:
+            plt.show()
+        plt.close()
+    
+    # Combined death plots
+    for level_name, (img, extent, death_data) in all_deaths.items():
+        plt.figure(figsize=(10, 6))
+        plt.imshow(img, extent=extent, origin='upper')
+
+        for pid, xs, ys in death_data:
+            color = cmap(pid)
+            plt.scatter(xs, ys, color=color, marker='x', s=40, label=f'player_{pid}')
+
+        plt.title(f"Combined Deaths in Level: {level_name}")
+        plt.xlabel('X Position')
+        plt.ylabel('Y Position')
+        plt.tight_layout()
+        plt.savefig(os.path.join(combined_dir, f"Combined_Deaths_{level_name}.png"))
+        if show_plot:
+            plt.show()
+        plt.close()
+
+def generate_reports(archive_path: str, graph_path: str, show_summarization_plots: bool = False, show_individual_plots: bool = False) -> None:
     """
     Generate player path plots and total death plots from archived data.
     """
+    # Ensure output directory exists
+    os.makedirs(graph_path, exist_ok=True)
+    
     # Extract data from archives
     archives = extract_archives(archive_path)
 
     # Plot player paths and collect log data
+    player_dir = os.path.join(graph_path, "player_paths")
+    os.makedirs(player_dir, exist_ok=True)
     log_dfs = []
     for user_id, (csv_path, log_paths) in archives.items():
         # create per-user graph directory
-        user_graph_dir = os.path.join(graph_path, f"user_{user_id}")
-        plot_player_paths(csv_path, graph_path=user_graph_dir, show_plot=show_path_plot)
+        user_graph_dir = os.path.join(player_dir, f"user_{user_id}")
+        os.makedirs(user_graph_dir, exist_ok=True)
+        
+        plot_player_paths(csv_path, graph_path=user_graph_dir, show_plot=show_individual_plots)
         log_df = combine_log_user(log_paths)
         log_dfs.append(log_df)
 
-    total_death_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_bar_plot)
+    total_death_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
+
+    plot_deaths_per_floor(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots, individual_plots=show_individual_plots)
 
 
 if __name__ == "__main__":
     archive_path = "./Logs/Archived/"
     graph_path = "./Logs/Graphs/"
-    show_bar_plot = True
-    show_path_plot= False
+    show_summarization_plots = True
+    show_individual_plots = False
 
-    generate_reports(archive_path, graph_path, show_bar_plot=show_bar_plot, show_path_plot=show_path_plot)
+    generate_reports(archive_path, graph_path, show_summarization_plots=show_summarization_plots, show_individual_plots=show_individual_plots)
