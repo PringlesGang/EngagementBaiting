@@ -357,3 +357,5 @@ MigrationBackup/
 !.gitkeep
 *.csv
 
+# Ignore all PDF files inside Logs/Graphs folder
+Logs/Graphs/**/*.pdf
