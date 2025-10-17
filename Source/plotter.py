@@ -1,6 +1,7 @@
-import pandas as pd
 import os
 import glob
+import re
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
@@ -53,28 +54,74 @@ def extract_archives(archive_path: str) -> dict:
 def extract_logdata(log_path: str) -> pd.DataFrame:
     """
     Extract log data from a single log file into a DataFrame.
+
+    returns: ['timestamp', 'room', 'x', 'y', 'sentiment', 'message']
     """
     if not os.path.isfile(log_path):
         return pd.DataFrame()
 
-    log_df = None # Implement log extraction preprocessing here
+    # Regex patterns
+    room_re = re.compile(r'Entering screen "([^"]+)"')
+    message_re = re.compile(r'Showing (\w+) death screen message "([^"]+)"')
+    death_re = re.compile(r'The player died at {X:(-?\d+)\s+Y:(-?\d+)}')
+    timestamp_re = re.compile(r'\[(.*?)\]')
+
+    data = []
+    current_room = None
+    current_event = {}
+
+    with open(log_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            # Extract timestamp
+            timestamp_match = timestamp_re.search(line)
+            timestamp = timestamp_match.group(1) if timestamp_match else None
+
+            # Detect entering a new room
+            room_match = room_re.search(line)
+            if room_match:
+                current_room = room_match.group(1)
+                continue
+
+            # Detect death message and sentiment
+            msg_match = message_re.search(line)
+            if msg_match:
+                sentiment, message = msg_match.groups()
+                current_event = {
+                    "timestamp": timestamp,
+                    "room": current_room,
+                    "x": None,
+                    "y": None,
+                    "sentiment": sentiment,
+                    "message": message
+                }
+                continue
+
+            # Detect coordinates of death
+            death_match = death_re.search(line)
+            if death_match and current_event:
+                x, y = map(int, death_match.groups())
+                current_event["x"] = x
+                current_event["y"] = y
+                data.append(current_event)
+                current_event = {}
+
+    log_df = pd.DataFrame(data, columns=['timestamp', 'room', 'x', 'y', 'sentiment', 'message'])
     return log_df
 
-def combine_log_user(archives: dict) -> pd.DataFrame:
+def combine_log_user(log_paths: list) -> pd.DataFrame:
     """
     Combine multiple log files for a single user into one DataFrame.
     """
     user_logs = []
-    for csv_path, log_paths in archives.values():
-        if log_paths:
-            for log_path in log_paths:
-                log_df = extract_logdata(log_path)
-                user_logs.append(log_df)
+    for log_path in log_paths:
+        if log_path:
+            log_df = extract_logdata(log_path)
+            user_logs.append(log_df)
 
     if user_logs:
         return pd.concat(user_logs, ignore_index=True)
 
-    return pd.DataFrame()
+    return user_logs
 
 def plot_player_paths(csv_file: str, graph_offset: int = 50) -> None:
     """
@@ -154,3 +201,5 @@ if __name__ == "__main__":
 
     for csv_path, log_paths in archives.values():
         plot_player_paths(csv_path)
+        log_df = combine_log_user(log_paths)
+        print(log_df)
