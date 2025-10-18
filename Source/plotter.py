@@ -502,11 +502,36 @@ def plot_deaths_per_floor(log_dfs: list, graph_path: str, show_plot: bool = Fals
             plt.show()
         plt.close()
 
-def boxplot_time_per_room(log_dfs: list, graph_path: str, show_plot: bool = False) -> None:
+def boxplot_death_per_category(log_dfs: list, graph_path: str, show_plot: bool = False) -> None:
     """
-    Create box plot of average completion time per room on each level.
+    Create box plot of number of deaths per sentiment category across log files.
     """
-    pass
+    # Aggregate deaths per sentiment per log file
+    summary_rows = []
+    for i, df in enumerate(log_dfs):
+        if df.empty or 'sentiment' not in df.columns:
+            continue
+        counts = df['sentiment'].value_counts()
+        for sentiment, count in counts.items():
+            summary_rows.append({'log_id': i, 'sentiment': sentiment, 'deaths': count})
+
+    summary_df = pd.DataFrame(summary_rows)
+
+    # Prepare data for boxplot
+    categories = summary_df['sentiment'].unique()
+    category_data = [summary_df[summary_df['sentiment'] == cat]['deaths'].values for cat in categories]
+
+    # Plot
+    plt.figure(figsize=(8, 6))
+    plt.boxplot(category_data, tick_labels=categories)
+    plt.title("Box Plot of Deaths per Sentiment Category")
+    plt.xlabel("Sentiment Category")
+    plt.ylabel("Number of Deaths per Log File")
+    plt.tight_layout()
+    plt.savefig(os.path.join(graph_path, "Boxplot_Deaths_PerCategory.png"))
+    if show_plot:
+        plt.show()
+    plt.close()
     
 def generate_reports(archive_path: str, graph_path: str, show_summarization_plots: bool = False, show_individual_plots: bool = False) -> None:
     """
@@ -538,6 +563,7 @@ def generate_reports(archive_path: str, graph_path: str, show_summarization_plot
 
     total_death_percategory_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
     average_death_percategory_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
+    boxplot_death_per_category(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
 
     total_death_perlevel_percategory_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
     average_death_perlevel_percategory_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
