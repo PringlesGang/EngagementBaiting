@@ -97,7 +97,7 @@ def extract_logdata(log_path: str) -> pd.DataFrame:
 
     # Regex patterns
     room_re = re.compile(r'Entering screen "([^"]+)"')
-    message_re = re.compile(r'Showing (\w+) death screen message "([^"]+)"')
+    message_re = re.compile(r'Showing\s+(\w+)\s+death\s+screen(?:\s+message\s+"([^"]+)")?', re.IGNORECASE)
     death_re = re.compile(r'The player died at {X:(-?\d+)\s+Y:(-?\d+)}')
     timestamp_re = re.compile(r'\[(.*?)\]')
 
@@ -269,6 +269,164 @@ def total_death_bar_plot(log_dfs: list, graph_path: str, show_plot: bool = False
             plt.show()
         plt.close()
 
+def average_death_per_room(log_dfs: list, graph_path: str, show_plot: bool = False) -> None:
+    """
+    Create bar plot of average deaths per room from multiple log DataFrames.
+    """
+    combined_df = pd.concat(log_dfs, ignore_index=True)
+
+    if combined_df.empty:
+        return
+
+    # Count deaths per room and preserve room order as defined in LEVEL_DATA
+    ordered_rooms = [room for lvl in LEVEL_DATA.values() for room in lvl.rooms]
+    extra_rooms = [r for r in combined_df['room'].unique() if r not in ordered_rooms]
+    final_rooms = ordered_rooms + extra_rooms
+    counts = combined_df['room'].value_counts().reindex(final_rooms, fill_value=0)
+
+    # Calculate average deaths per room
+    average_deaths = counts / len(log_dfs)
+
+    plt.figure(figsize=(8, 4))
+    average_deaths.plot(kind='bar', color=plt.cm.tab20.colors)
+    plt.title("Average Deaths per Room")
+    plt.xlabel("Room")
+    plt.ylabel("Average Number of Deaths")
+    plt.xticks(rotation=45, ha='right') # Rotate x labels for better readability
+    plt.tight_layout()
+    plt.savefig(os.path.join(graph_path, "AverageDeaths_PerRoom.png"))
+    if show_plot:
+        plt.show()
+    plt.close()
+
+def total_death_percategory_bar_plot(log_dfs: list, graph_path: str, show_plot: bool = False) -> None:
+    """
+    Create bar plot of total deaths per sentiment category from multiple log DataFrames.
+    """
+    combined_df = pd.concat(log_dfs, ignore_index=True)
+
+    if combined_df.empty:
+        return
+
+    # Count deaths per sentiment category
+    counts = combined_df['sentiment'].value_counts()
+
+    plt.figure(figsize=(6, 4))
+    counts.plot(kind='bar', color=plt.cm.Paired.colors)
+    plt.title("Total Deaths per Sentiment Category")
+    plt.xlabel("Sentiment Category")
+    plt.ylabel("Number of Deaths")
+    plt.xticks(rotation=45, ha='right') # Rotate x labels for better readability
+    plt.tight_layout()
+    plt.savefig(os.path.join(graph_path, "TotalDeaths_PerCategory.png"))
+    if show_plot:
+        plt.show()
+    plt.close()
+
+def average_death_percategory_bar_plot(log_dfs: list, graph_path: str, show_plot: bool = False) -> None:
+    """
+    Create bar plot of average deaths per sentiment category from multiple log DataFrames.
+    """
+    combined_df = pd.concat(log_dfs, ignore_index=True)
+
+    if combined_df.empty:
+        return
+
+    # Count deaths per sentiment category
+    counts = combined_df['sentiment'].value_counts()
+
+    # Calculate average deaths per sentiment category
+    average_deaths = counts / len(log_dfs)
+
+    plt.figure(figsize=(6, 4))
+    average_deaths.plot(kind='bar', color=plt.cm.Paired.colors)
+    plt.title("Average Deaths per Sentiment Category")
+    plt.xlabel("Sentiment Category")
+    plt.ylabel("Average Number of Deaths")
+    plt.xticks(rotation=45, ha='right') # Rotate x labels for better readability
+    plt.tight_layout()
+    plt.savefig(os.path.join(graph_path, "AverageDeaths_PerCategory.png"))
+    if show_plot:
+        plt.show()
+    plt.close()
+
+def total_death_perlevel_percategory_bar_plot(log_dfs: list, graph_path: str, show_plot: bool = False) -> None:
+    """
+    Create bar plot of total deaths per sentiment category for each level from multiple log DataFrames.
+    """
+    combined_df = pd.concat(log_dfs, ignore_index=True)
+
+    if combined_df.empty:
+        return
+
+    # For each level, create a grouped bar chart where each room shows bars for each sentiment
+    for level_name, level_info in LEVEL_DATA.items():
+        level_rooms = level_info.rooms
+        level_df = combined_df[combined_df['room'].isin(level_rooms)]
+
+        if level_df.empty:
+            continue
+
+        # rows: rooms (preserve order from LEVEL_DATA), cols: sentiments
+        grouped_level = (
+            level_df.groupby(['room', 'sentiment']).size()
+            .unstack(fill_value=0)
+            .reindex(index=level_rooms, fill_value=0)
+        )
+
+        plt.figure(figsize=(10, 6))
+        ax = grouped_level.plot(kind='bar', rot=45, color=plt.cm.Paired.colors, stacked=False, ax=plt.gca())
+        plt.title(f"Deaths per Room by Sentiment in Level: {level_name}")
+        plt.xlabel("Room")
+        plt.ylabel("Number of Deaths")
+        plt.xticks(rotation=45, ha='right')
+        plt.legend(title="Sentiment", bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.tight_layout()
+        plt.savefig(os.path.join(graph_path, f"TotalDeaths_{level_name}_PerRoomPerCategory.png"))
+        if show_plot:
+            plt.show()
+        plt.close()
+
+def average_death_perlevel_percategory_bar_plot(log_dfs: list, graph_path: str, show_plot: bool = False) -> None:
+    """
+    Create bar plot of average deaths per sentiment category for each level from multiple log DataFrames.
+    """
+    combined_df = pd.concat(log_dfs, ignore_index=True)
+
+    if combined_df.empty:
+        return
+
+    # For each level, create a grouped bar chart where each room shows bars for each sentiment
+    for level_name, level_info in LEVEL_DATA.items():
+        level_rooms = level_info.rooms
+        level_df = combined_df[combined_df['room'].isin(level_rooms)]
+
+        if level_df.empty:
+            continue
+
+        # rows: rooms (preserve order from LEVEL_DATA), cols: sentiments
+        grouped_level = (
+            level_df.groupby(['room', 'sentiment']).size()
+            .unstack(fill_value=0)
+            .reindex(index=level_rooms, fill_value=0)
+        )
+
+        # Calculate average deaths per room per sentiment
+        average_grouped_level = grouped_level / len(log_dfs)
+
+        plt.figure(figsize=(10, 6))
+        ax = average_grouped_level.plot(kind='bar', rot=45, color=plt.cm.Paired.colors, stacked=False, ax=plt.gca())
+        plt.title(f"Average Deaths per Room by Sentiment in Level: {level_name}")
+        plt.xlabel("Room")
+        plt.ylabel("Average Number of Deaths")
+        plt.xticks(rotation=45, ha='right')
+        plt.legend(title="Sentiment", bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.tight_layout()
+        plt.savefig(os.path.join(graph_path, f"AverageDeaths_{level_name}_PerRoomPerCategory.png"))
+        if show_plot:
+            plt.show()
+        plt.close()
+
 def plot_deaths_per_floor(log_dfs: list, graph_path: str, show_plot: bool = False, individual_plots: bool = False, graph_offset: int = 100) -> None:
     """
     Create one image per room showing all player deaths in that room.
@@ -344,6 +502,12 @@ def plot_deaths_per_floor(log_dfs: list, graph_path: str, show_plot: bool = Fals
             plt.show()
         plt.close()
 
+def boxplot_time_per_room(log_dfs: list, graph_path: str, show_plot: bool = False) -> None:
+    """
+    Create box plot of average completion time per room on each level.
+    """
+    pass
+    
 def generate_reports(archive_path: str, graph_path: str, show_summarization_plots: bool = False, show_individual_plots: bool = False) -> None:
     """
     Generate player path plots and total death plots from archived data.
@@ -368,14 +532,20 @@ def generate_reports(archive_path: str, graph_path: str, show_summarization_plot
         log_dfs.append(log_df)
 
     total_death_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
+    average_death_per_room(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
 
     plot_deaths_per_floor(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots, individual_plots=show_individual_plots)
 
+    total_death_percategory_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
+    average_death_percategory_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
+
+    total_death_perlevel_percategory_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
+    average_death_perlevel_percategory_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
 
 if __name__ == "__main__":
     archive_path = "./Logs/Archived/"
     graph_path = "./Logs/Graphs/"
-    show_summarization_plots = True
+    show_summarization_plots = False
     show_individual_plots = False
 
     generate_reports(archive_path, graph_path, show_summarization_plots=show_summarization_plots, show_individual_plots=show_individual_plots)
