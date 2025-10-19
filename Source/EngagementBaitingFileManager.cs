@@ -30,6 +30,16 @@ internal static class FileManager
     private static float DisplayTime = 0.0f;
     private static string DisplayMessage = null;
 
+    private static string CurrentId = null;
+    private const uint IdLength = 5;
+
+    private static Random rng = new();
+
+    public static void Init()
+    {
+        GenerateId();
+    }
+
     private static void UpdateInput()
     {
         KeyboardState keyboardState = Keyboard.GetState();
@@ -63,27 +73,26 @@ internal static class FileManager
 
     public static void Render()
     {
-        if (DisplayMessage == null) return;
-
-        float alpha = 1.0f;
+        float saveMsgAlpha = 1.0f;
         if (DisplayTime < FadeDuration)
         {
-            alpha = DisplayTime / FadeDuration;
+            saveMsgAlpha = DisplayTime / FadeDuration;
         }
         else if (DisplayTime > DisplayDuration - FadeDuration)
         {
-            alpha = (DisplayDuration - DisplayTime) / FadeDuration;
+            saveMsgAlpha = (DisplayDuration - DisplayTime) / FadeDuration;
         }
 
-        Vector2 justify = new Vector2(1.0f + 15.0f / Engine.Width, 15.0f / Engine.Height);
+        Vector2 saveMsgJustify = new Vector2(1.0f + 15.0f / Engine.Width, 15.0f / Engine.Height);
 
         Draw.SpriteBatch.Begin();
         try
         {
-            ActiveFont.Draw(DisplayMessage, new Vector2(Engine.Width, 0.0f), justify,
-                            new Vector2(0.5f, 0.5f), Color.White * alpha);
+            ActiveFont.Draw(CurrentId, new Vector2(5.0f, 5.0f), Vector2.Zero, Vector2.One * 0.3f, Color.Gray * 0.7f);
+            ActiveFont.Draw(DisplayMessage, new Vector2(Engine.Width, 0.0f), saveMsgJustify,
+                            new Vector2(0.5f, 0.5f), Color.White * saveMsgAlpha);
         }
-        catch (Exception e)
+        catch (Exception)
         {
         }
         Draw.SpriteBatch.End();
@@ -102,7 +111,7 @@ internal static class FileManager
         bool success = true;
 
         string nowString = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        string destDir = Path.Combine(DestPath, nowString);
+        string destDir = Path.Combine(DestPath, $"{nowString}_{CurrentId}");
         success &= CreateDirectory(destDir);
 
         foreach (string sourcePath in SourcePaths)
@@ -127,9 +136,37 @@ internal static class FileManager
         }
         else
         {
-            DisplayMessage = success ? $"Saved logs to {nowString}" : "Failed to save logs";
+            // Create a text file with the experiment ID, just to be safe
+            success &= CreateFile(Path.Combine(destDir, $"{CurrentId}.txt"), $"Experiment ID: {CurrentId}");
+
+            DisplayMessage = success ? $"Saved logs for {CurrentId}" : "Failed to save logs";
+
+            if (success) GenerateId();
         }
         DisplayTime = 0.0f;
+    }
+
+    private static void GenerateId()
+    {
+        /*
+        Chances of collision after n trials is
+            1 - (64^IdLength)! / ((64^IdLength - n)! * (64^IdLength)^n)
+        With IdLength=5, chances of collision are:
+            n= 100 -> ~4.39e-6
+            n=1000 -> ~4.61e-4
+            n=5000 -> ~0.012
+        I think we're good
+        */
+
+        // Not to-spec base64, but it has to be filename-safe
+        const string base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+=";
+
+        CurrentId = "";
+        for (uint i = 0; i < IdLength; i++)
+        {
+            int curVal = rng.Next(0, 64);
+            CurrentId += base64Chars[curVal];
+        }
     }
 
     private static bool CreateDirectory(string path)
@@ -184,5 +221,28 @@ internal static class FileManager
             success &= MoveFile(file, destFile);
         }
         return success;
+    }
+
+    private static bool CreateFile(string path, string contents = null)
+    {
+        try
+        {
+            FileStream fs = File.Create(path);
+
+            if (contents != null)
+            {
+                using (StreamWriter writer = new StreamWriter(fs))
+                {
+                    writer.Write(contents);
+                }
+            }
+
+            fs.Close();
+            return true;
+        } catch (Exception e)
+        {
+            Logger.Log(LogLevel.Error, "EngagementBaiting/FileManager", $"Failed to create file \"{path}\": {e}");
+            return false;
+        }
     }
 }

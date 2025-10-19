@@ -30,6 +30,7 @@ public class EngagementBaitingModule : EverestModule {
     }
 
     public override void Load() {
+        FileManager.Init();
         FileManager.BackupFiles();
 
         On.Celeste.HudRenderer.RenderContent += OnHudRenderHook;
