@@ -16,27 +16,27 @@ public enum DeathScreenFeedbackType
 
 internal class DeathScreen
 {
-    private Dictionary<DeathScreenFeedbackType, List<String>> messages = new();
-    private Stack<String> messageStack = new();
-    private String currentMessage = null;
+    private Dictionary<DeathScreenFeedbackType, List<string>> messages = [];
+    private Stack<string> messageStack = new();
+    private string currentMessage = null;
     private DeathScreenFeedbackType currentFeedbackType = DeathScreenFeedbackType.Neutral;
 
     private float showTime = 0.0f;
     private bool isShowing = false;
 
-    private static Random rng = new Random();
+    private static Random rng = new();
 
     public DeathScreen() {
-        void AddMessages(DeathScreenFeedbackType type, String filePath) {
+        void AddMessages(DeathScreenFeedbackType type, string filePath) {
             if (System.IO.File.Exists(filePath)) {
-                messages[type] = new List<String>(System.IO.File.ReadAllLines(filePath));
+                messages[type] = [.. System.IO.File.ReadAllLines(filePath)];
             } else {
                 Logger.Log(LogLevel.Error, "EngagementBaiting/DeathScreen", $"Message file not found: {filePath}");
-                messages[type] = new List<String> { "Failed to load messages file" }; // Fallback string
+                messages[type] = ["Failed to load messages file"]; // Fallback string
             }
         }
 
-        const String basePath = "./Mods/EngagementBaiting/Assets";
+        const string basePath = "./Mods/EngagementBaiting/Assets";
         AddMessages(DeathScreenFeedbackType.Negative, Path.Combine(basePath, "negative_feedback.txt"));
         AddMessages(DeathScreenFeedbackType.Positive, Path.Combine(basePath, "positive_feedback.txt"));
     }
@@ -54,14 +54,11 @@ internal class DeathScreen
             currentFeedbackType = type;
 
             // Refill stack with shuffled messages
-            List<string> permutation = new List<string>(messages[type]);
-            for (int toPlaceCount = permutation.Count; toPlaceCount > 1; toPlaceCount--) {
-                int selected = rng.Next(toPlaceCount);
-                (permutation[selected], permutation[toPlaceCount - 1]) = (permutation[toPlaceCount - 1], permutation[selected]);
-            }
+            List<string> permutation = [.. messages[type]];
+            permutation.Shuffle(rng);
 
             messageStack.Clear();
-            foreach (String msg in permutation) {
+            foreach (string msg in permutation) {
                 messageStack.Push(msg);
             }
         }
@@ -99,8 +96,8 @@ internal class DeathScreen
 
         Draw.SpriteBatch.Begin();
 
-        Texture2D background = new Texture2D(Draw.SpriteBatch.GraphicsDevice, 1, 1);
-        background.SetData(new Color[1] { Color.Black });
+        Texture2D background = new(Draw.SpriteBatch.GraphicsDevice, 1, 1);
+        background.SetData([Color.Black]);
         try
         {
             Draw.SpriteBatch.Draw(background, viewport, Color.White * alpha);
@@ -111,7 +108,7 @@ internal class DeathScreen
                                 new Vector2(0.5f, 0.5f), Vector2.One, Color.White * alpha);
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
         }
         Draw.SpriteBatch.End();
