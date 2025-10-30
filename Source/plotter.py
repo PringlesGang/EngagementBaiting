@@ -65,7 +65,6 @@ def extract_archives(archive_path: str) -> dict:
     """
     Extract all PlayerPositions.csv and EngagementBaiting-*.log files from every folder in the archive_path.
     """
-    user_id = 0 # TEMP until user ID is added to logs
     results = dict()
     # Each subfolder is named after the date and time it was saved
     for subdir in os.listdir(archive_path):
@@ -82,9 +81,18 @@ def extract_archives(archive_path: str) -> dict:
         log_files = glob.glob(os.path.join(folder_path, "EngagementBaiting-*.log"))
         log_path = log_files if log_files else None
 
-        # TODO: Input user id logic here if needed
+        # Find a .txt file in the subfolder and use its name (before .txt) as the user_id
+        txt_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".txt")]
+        user_id = os.path.splitext(txt_files[0])[0] if txt_files else subdir
+
+        # Ensure unique keys in results
+        base_id = user_id
+        counter = 1
+        while user_id in results:
+            user_id = f"{base_id}_{counter}"
+            counter += 1
+
         results[user_id] = (csv_path, log_path)
-        user_id += 1 
     return results
 
 def extract_logdata(log_path: str) -> pd.DataFrame:
