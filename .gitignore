@@ -357,3 +357,6 @@ MigrationBackup/
 !.gitkeep
 *.csv
 
+# Ignore all PNG files inside Logs/Graphs folder
+Logs/Graphs/**/*.png
+Logs/Archived/**/*.txt
