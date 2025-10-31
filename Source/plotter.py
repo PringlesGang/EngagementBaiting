@@ -33,16 +33,13 @@ LEVEL_DATA: Dict[str, LevelInfo] = {
     "Test_level": LevelInfo(
         name = "Test_level",
         img_path = "./Maps/Images/Final-Level.png",
-        offset = (-56, -167),
+        offset = (-56, -77),
         rooms = [
             "SpringRoom",
             "SpringRoom2",
             "Boosterroom1",
             "Boosterroom2",
             "Boosterroom3",
-            "CloudAndFeatherRoom",
-            "CloudAndFeatherRoom2",
-            "FinalRoom",
         ],
     ),
 }
