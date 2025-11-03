@@ -87,6 +87,7 @@ public class EngagementBaitingModule : EverestModule {
     private void OnLoadScreenHook(On.Celeste.Level.orig_LoadLevel orig, Level level, Player.IntroTypes playerIntroType, bool isFromLoader)
     {
         EBLogger.Log($"Entering screen \"{level.Session.Level}\"");
+        FileManager.AreasPlayed.Add(level.Session.Area.ID);
 
         orig(level, playerIntroType, isFromLoader);
     }
@@ -95,6 +96,7 @@ public class EngagementBaitingModule : EverestModule {
     {
         EBLogger.Log("Ending level");
         EBLogger.CloseFile();
+        FileManager.AreasPlayed.Add(session.Area.ID);
 
         orig(exit, mode, session, snow);
     }
