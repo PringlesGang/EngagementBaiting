@@ -97,7 +97,17 @@ internal class DeathScreen
     {
         if (!isShowing || !EngagementBaitingModule.Settings.Enabled) return;
 
-        float alpha = MathHelper.Clamp(showTime / EngagementBaitingModule.Settings.FadeInTime, 0.0f, 1.0f);
+        float alpha = 1.0f;
+        float fadeInTime = EngagementBaitingModule.Settings.FadeInTime;
+        float showDuration = EngagementBaitingModule.Settings.Duration;
+        if (showTime < fadeInTime) // Fade in
+        {
+            alpha = MathHelper.Min(showTime / fadeInTime, 1.0f);
+        } else if (showDuration - showTime < fadeInTime) // Fade out
+        {
+            alpha = MathHelper.Max((showDuration - showTime) / fadeInTime, 0.0f);
+        }
+
         Rectangle viewport = Draw.SpriteBatch.GraphicsDevice.Viewport.Bounds;
 
         Draw.SpriteBatch.Begin();
