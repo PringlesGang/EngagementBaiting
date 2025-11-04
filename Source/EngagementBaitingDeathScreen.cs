@@ -16,20 +16,22 @@ public enum DeathScreenFeedbackType
 
 internal class DeathScreen
 {
-    private Dictionary<DeathScreenFeedbackType, List<string>> messages = [];
-    private Stack<string> messageStack = new();
+    private readonly Dictionary<DeathScreenFeedbackType, List<string>> messages = [];
+    private readonly Stack<string> messageStack = new();
     private string currentMessage = null;
     private DeathScreenFeedbackType currentFeedbackType = DeathScreenFeedbackType.Neutral;
 
     private float showTime = 0.0f;
     private bool isShowing = false;
 
-    private static Random rng = new();
+    private readonly static Random rng = new();
 
     public DeathScreen() {
+        MInput.Disabled = false;
+
         void AddMessages(DeathScreenFeedbackType type, string filePath) {
-            if (System.IO.File.Exists(filePath)) {
-                messages[type] = [.. System.IO.File.ReadAllLines(filePath)];
+            if (File.Exists(filePath)) {
+                messages[type] = [.. File.ReadAllLines(filePath)];
             } else {
                 Logger.Log(LogLevel.Error, "EngagementBaiting/DeathScreen", $"Message file not found: {filePath}");
                 messages[type] = ["Failed to load messages file"]; // Fallback string
@@ -73,6 +75,7 @@ internal class DeathScreen
 
         isShowing = true;
         showTime = 0.0f;
+        DisableInput();
 
         SelectMessage(EngagementBaitingModule.Settings.FeedbackType);
     }
@@ -82,16 +85,29 @@ internal class DeathScreen
 
         showTime += Engine.RawDeltaTime;
 
-        if (showTime >= EngagementBaitingModule.Settings.Duration) {
+        if (showTime >= EngagementBaitingModule.Settings.Duration)
+        {
             isShowing = false;
             showTime = 0.0f;
+            MInput.Disabled = false;
         }
     }
 
-    public void Render() {
+    public void Render()
+    {
         if (!isShowing || !EngagementBaitingModule.Settings.Enabled) return;
 
-        float alpha = MathHelper.Clamp(showTime / EngagementBaitingModule.Settings.FadeInTime, 0.0f, 1.0f);
+        float alpha = 1.0f;
+        float fadeInTime = EngagementBaitingModule.Settings.FadeInTime;
+        float showDuration = EngagementBaitingModule.Settings.Duration;
+        if (showTime < fadeInTime) // Fade in
+        {
+            alpha = MathHelper.Min(showTime / fadeInTime, 1.0f);
+        } else if (showDuration - showTime < fadeInTime) // Fade out
+        {
+            alpha = MathHelper.Max((showDuration - showTime) / fadeInTime, 0.0f);
+        }
+
         Rectangle viewport = Draw.SpriteBatch.GraphicsDevice.Viewport.Bounds;
 
         Draw.SpriteBatch.Begin();
@@ -112,5 +128,20 @@ internal class DeathScreen
         {
         }
         Draw.SpriteBatch.End();
+    }
+
+    private static void DisableInput()
+    {
+        MInput.Disabled = true;
+
+        // Reset all input
+        // (Buttons are handled by `MInput.Disabled = true`)
+        Input.MoveX.Value = 0;
+        Input.MoveY.Value = 0;
+        Input.GliderMoveY.Value = 0;
+
+        Input.Aim.Value = Vector2.Zero;
+        Input.Feather.Value = Vector2.Zero;
+        Input.MountainAim.Value = Vector2.Zero;
     }
 }

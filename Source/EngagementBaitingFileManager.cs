@@ -33,6 +33,8 @@ internal static class FileManager
     private static string CurrentId = null;
     private const uint IdLength = 5;
 
+    public static readonly HashSet<int> AreasPlayed = [];
+
     private static Random rng = new();
 
     public static void Init()
@@ -141,7 +143,14 @@ internal static class FileManager
 
             DisplayMessage = success ? $"Saved logs for {CurrentId}" : "Failed to save logs";
 
-            if (success) GenerateId();
+            if (success)
+            {
+                GenerateId();
+
+                foreach (int areaId in AreasPlayed) {
+                    SaveData.Instance.Areas_Safe[areaId].Modes[(int)AreaMode.Normal].Deaths = 0;
+                }
+            }
         }
         DisplayTime = 0.0f;
     }
