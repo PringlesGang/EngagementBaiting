@@ -37,6 +37,7 @@ public class EngagementBaitingModule : EverestModule {
 
         On.Celeste.Player.Update += OnPlayerUpdateHook;
         On.Celeste.Player.Die += OnDeathHook;
+        On.Celeste.Level.DoScreenWipe += ScreenWipeHook;
 
         On.Celeste.Level.LoadLevel += OnLoadScreenHook;
         On.Celeste.LevelExit.ctor += OnLevelExitHook;
@@ -49,6 +50,7 @@ public class EngagementBaitingModule : EverestModule {
 
         On.Celeste.Player.Update -= OnPlayerUpdateHook;
         On.Celeste.Player.Die -= OnDeathHook;
+        On.Celeste.Level.DoScreenWipe -= ScreenWipeHook;
 
         On.Celeste.Level.LoadLevel -= OnLoadScreenHook;
         On.Celeste.LevelExit.ctor -= OnLevelExitHook;
@@ -67,11 +69,24 @@ public class EngagementBaitingModule : EverestModule {
 
     private PlayerDeadBody OnDeathHook(On.Celeste.Player.orig_Die orig, Player self,
                                               Vector2 direction, bool evenIfInvinsible,
-                                              bool registerDeathInStats) {
+                                              bool registerDeathInStats)
+    {
         deathScreen.Show();
         EBLogger.Log($"The player died at {self.Position.ToString()}");
 
         return orig(self, direction, evenIfInvinsible, registerDeathInStats);
+    }
+
+    private void ScreenWipeHook(On.Celeste.Level.orig_DoScreenWipe orig, Level self,
+                                bool wipeIn, Action onComplete = null, bool hiresSnow = false)
+    {
+        orig(self, wipeIn, onComplete, hiresSnow);
+
+        if (Settings.Enabled && self.Wipe != null)
+        {
+            self.Wipe.Cancel();
+            deathScreen.onComplete = onComplete;
+        }
     }
 
     private void OnHudRenderHook(On.Celeste.HudRenderer.orig_RenderContent orig, HudRenderer self, Monocle.Scene scene) {
