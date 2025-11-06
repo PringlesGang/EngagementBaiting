@@ -6,7 +6,7 @@ public class EngagementBaitingModuleSettings : EverestModuleSettings {
     public DeathScreenFeedbackType FeedbackType { get; set; } = DeathScreenFeedbackType.Neutral;
 
     [SettingNumberInput(allowNegatives: false, maxLength: 3)]
-    public float Duration { get; set; } = 1.5f;
+    public float Duration { get; set; } = 5.0f;
 
     [SettingNumberInput(allowNegatives: false, maxLength: 3)]
     public float FadeInTime { get; set; } = 0.5f;
