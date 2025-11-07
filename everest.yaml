@@ -1,5 +1,5 @@
 - Name: EngagementBaiting
-  Version: 0.1.0
+  Version: 1.0.0
   DLL: bin/EngagementBaiting.dll
   Dependencies:
     - Name: EverestCore

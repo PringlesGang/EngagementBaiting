@@ -24,6 +24,8 @@ internal class DeathScreen
     private float showTime = 0.0f;
     private bool isShowing = false;
 
+    public Action onComplete = null;
+
     private readonly static Random rng = new();
 
     public DeathScreen() {
@@ -84,6 +86,12 @@ internal class DeathScreen
         if (!isShowing) return;
 
         showTime += Engine.RawDeltaTime;
+
+        if (onComplete != null && showTime >= EngagementBaitingModule.Settings.FadeInTime)
+        {
+            onComplete();
+            onComplete = null;
+        }
 
         if (showTime >= EngagementBaitingModule.Settings.Duration)
         {

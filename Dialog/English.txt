@@ -1,1 +1,9 @@
-World= Video games for research world
+World= Video Games for Research world
+
+World_1_Tutorial= Tutorial
+World_2_Final_Level= Experiment
+
+poem_World_1_Tutorial_A= You beat the tutorial!
+poem_World_2_Final_Level_A= Thank you for participating!
+
+modoptions_engagementbaitingmodule_title= EngagementBaiting
