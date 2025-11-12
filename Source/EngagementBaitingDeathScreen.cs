@@ -22,7 +22,7 @@ internal class DeathScreen
     private DeathScreenFeedbackType currentFeedbackType = DeathScreenFeedbackType.Neutral;
 
     private float showTime = 0.0f;
-    private bool isShowing = false;
+    public bool IsShowing { get; private set; } = false;
 
     public Action onComplete = null;
 
@@ -75,7 +75,7 @@ internal class DeathScreen
     public void Show() {
         if (!EngagementBaitingModule.Settings.Enabled) return;
 
-        isShowing = true;
+        IsShowing = true;
         showTime = 0.0f;
         DisableInput();
 
@@ -83,7 +83,7 @@ internal class DeathScreen
     }
 
     public void Update() {
-        if (!isShowing) return;
+        if (!IsShowing) return;
 
         showTime += Engine.RawDeltaTime;
 
@@ -95,7 +95,7 @@ internal class DeathScreen
 
         if (showTime >= EngagementBaitingModule.Settings.Duration)
         {
-            isShowing = false;
+            IsShowing = false;
             showTime = 0.0f;
             MInput.Disabled = false;
         }
@@ -103,7 +103,7 @@ internal class DeathScreen
 
     public void Render()
     {
-        if (!isShowing || !EngagementBaitingModule.Settings.Enabled) return;
+        if (!IsShowing || !EngagementBaitingModule.Settings.Enabled) return;
 
         float alpha = 1.0f;
         float fadeInTime = EngagementBaitingModule.Settings.FadeInTime;

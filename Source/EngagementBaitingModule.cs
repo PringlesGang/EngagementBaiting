@@ -82,7 +82,7 @@ public class EngagementBaitingModule : EverestModule {
     {
         orig(self, wipeIn, onComplete, hiresSnow);
 
-        if (Settings.Enabled && self.Wipe != null)
+        if (Settings.Enabled && deathScreen.IsShowing && self.Wipe != null)
         {
             self.Wipe.Cancel();
             deathScreen.onComplete = onComplete;
@@ -116,7 +116,7 @@ public class EngagementBaitingModule : EverestModule {
         orig(exit, mode, session, snow);
     }
 
-    private void OnGameExitHook(On.Celeste.Celeste.orig_OnExiting orig, global::Celeste.Celeste self, object sender, System.EventArgs args)
+    private void OnGameExitHook(On.Celeste.Celeste.orig_OnExiting orig, Celeste self, object sender, System.EventArgs args)
     {
         EBLogger.CloseFile();
         PositionLogger.CloseFile();
