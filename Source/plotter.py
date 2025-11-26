@@ -2,6 +2,7 @@ import os
 import glob
 import re
 import pandas as pd
+import numpy as np
 from dataclasses import dataclass
 from typing import List, Dict
 import matplotlib.pyplot as plt
@@ -538,6 +539,150 @@ def boxplot_death_per_category(log_dfs: list, graph_path: str, show_plot: bool =
         plt.show()
     plt.close()
     
+def boxplot_time_per_category(log_dfs: list, archives: dict, graph_path: str, show_plot: bool = False) -> None:
+    """
+    Create box plot of time spent per sentiment category.
+    """
+    sentiment_categories = []
+    player_total_minutes = []
+
+    for (player_id, (csv_path, _)), log_df in zip(archives.items(), log_dfs):
+        # Determine player's sentiment category
+        if isinstance(log_df, pd.DataFrame) and not log_df.empty and 'sentiment' in log_df.columns:
+            sentiment = log_df['sentiment'].dropna()
+            sentiment = sentiment.value_counts().idxmax() if not sentiment.empty else None
+        else:
+            sentiment = None
+        sentiment_categories.append(sentiment)
+
+        # Read player's PlayerPositions.csv and compute total time across levels
+        try:
+            df = pd.read_csv(csv_path, parse_dates=["Timestamp"])
+        except Exception:
+            # If CSV can't be read, treat as zero time
+            player_total_minutes.append(0.0)
+            continue
+
+        # ensure timestamps sorted
+        df = df.sort_values("Timestamp")
+
+        total_seconds = 0.0
+        for level_name, level_info in LEVEL_DATA.items():
+            # Select rows for any room that belongs to this level
+            level_rows = df[df["Level"].isin(level_info.rooms)]
+            if level_rows.empty:
+                continue
+
+            t0 = level_rows["Timestamp"].iloc[0]
+            t1 = level_rows["Timestamp"].iloc[-1]
+            # defensive: ensure timestamps are datetimes
+            if pd.isna(t0) or pd.isna(t1):
+                continue
+            total_seconds += (t1 - t0).total_seconds()
+
+        player_total_minutes.append(total_seconds / 60.0)
+
+    # Build DataFrame and drop players with no sentiment or no time
+    df_plot = pd.DataFrame({
+        "sentiment": sentiment_categories,
+        "time_min": player_total_minutes
+    }).dropna(subset=["sentiment", "time_min"])
+
+    if df_plot.empty:
+        return
+
+    categories = sorted(df_plot["sentiment"].unique())
+    box_data = [df_plot[df_plot["sentiment"] == c]["time_min"].values for c in categories]
+
+    plt.figure(figsize=(8, 6))
+    plt.boxplot(box_data, tick_labels=categories)
+    plt.title("Total Playtime per Sentiment Category")
+    plt.xlabel("Sentiment Category")
+    plt.ylabel("Time (minutes)")
+    plt.tight_layout()
+    plt.savefig(os.path.join(graph_path, "Boxplot_Time_PerCategory.png"))
+    if show_plot:
+        plt.show()
+    plt.close()
+    
+
+def barplot_time_per_room_per_category(log_dfs: list, archives: dict, graph_path: str, show_plot: bool = False) -> None:
+    """
+    Create bar plot of time spent per room per sentiment category.
+    """
+    # Determine sentiment categories
+    sentiment_categories = []
+    for log_df in log_dfs:
+        if log_df.empty or "sentiment" not in log_df.columns:
+            sentiment_categories.append(None)
+        else:
+            sentiment_categories.append(log_df["sentiment"].value_counts().idxmax())
+
+    # room_times[level][room][sentiment] = list of durations
+    room_times = {
+        level_name: {room: {} for room in level_info.rooms}
+        for level_name, level_info in LEVEL_DATA.items()
+    }
+
+    for (player_id, (csv_path, _)), sentiment in zip(archives.items(), sentiment_categories):
+
+        df = pd.read_csv(csv_path, parse_dates=["Timestamp"])
+        df = df.sort_values("Timestamp")
+
+        if sentiment is None:
+            continue
+
+        for level_name, level_info in LEVEL_DATA.items():
+            for room in level_info.rooms:
+                room_df = df[df["Level"] == room]
+                if room_df.empty:
+                    continue
+
+                t0 = room_df["Timestamp"].iloc[0]
+                t1 = room_df["Timestamp"].iloc[-1]
+                duration = (t1 - t0).total_seconds()
+
+                room_times[level_name][room].setdefault(sentiment, []).append(duration)
+
+    # Plotting per level
+    for level_name, level_info in LEVEL_DATA.items():
+        rooms = level_info.rooms
+
+        # collect sentiments used in this level
+        sentiments = sorted({
+            s for room in rooms for s in room_times[level_name][room].keys()
+        })
+        if not sentiments:
+            continue
+
+        # Fill matrix rows=rooms, cols=sentiments with averages
+        data = []
+        for room in rooms:
+            row = []
+            for s in sentiments:
+                values = room_times[level_name][room].get(s, [])
+                row.append(np.mean(values) if values else 0.0)
+            data.append(row)
+
+        data = np.array(data)
+        x = np.arange(len(rooms))
+        width = 0.8 / len(sentiments)
+
+        plt.figure(figsize=(12, 6))
+        for i, s in enumerate(sentiments):
+            plt.bar(x + i * width, data[:, i], width, label=s, color=plt.cm.Paired.colors[i % plt.cm.Paired.N])
+
+        plt.xticks(x + width * len(sentiments) / 2, rooms, rotation=45, ha="right")
+        plt.ylabel("Time (seconds)")
+        plt.title(f"Time Spent per Room per Sentiment Category: {level_name}")
+        plt.legend(title="Sentiment", bbox_to_anchor=(1.05, 1), loc="upper left")
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(graph_path, f"Barplot_Time_PerRoom_PerCategory_{level_name}.png"))
+        if show_plot:
+            plt.show()
+        plt.close()
+
 def generate_reports(archive_path: str, graph_path: str, show_summarization_plots: bool = False, show_individual_plots: bool = False) -> None:
     """
     Generate player path plots and total death plots from archived data.
@@ -572,6 +717,9 @@ def generate_reports(archive_path: str, graph_path: str, show_summarization_plot
 
     total_death_perlevel_percategory_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
     average_death_perlevel_percategory_bar_plot(log_dfs, graph_path=graph_path, show_plot=show_summarization_plots)
+
+    boxplot_time_per_category(log_dfs, archives, graph_path, show_summarization_plots)
+    barplot_time_per_room_per_category(log_dfs, archives, graph_path, show_summarization_plots)
 
 if __name__ == "__main__":
     archive_path = "./Logs/Archived/"
