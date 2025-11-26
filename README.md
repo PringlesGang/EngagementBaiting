@@ -39,7 +39,7 @@ The second is the main experiment level. A longer, more difficult level specific
 ## Graphs
 
 Graphs pertaining to all experiments can be generated automatically by running the [`./Source/plotter.py`](./Source/plotter.py) Python script from this mod's root directory.
-This will generate the graphs in the `./Logs/Graphs` directory.
+This will generate the graphs in the `./Logs/Graphs` directory. This Python script was tested on python version 3.11.
 
 
 ## Death screen
