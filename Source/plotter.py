@@ -291,8 +291,20 @@ def average_death_per_room(log_dfs: list, graph_path: str, show_plot: bool = Fal
     final_rooms = ordered_rooms + extra_rooms
     counts = combined_df['room'].value_counts().reindex(final_rooms, fill_value=0)
 
-    # Calculate average deaths per room
-    average_deaths = counts / len(log_dfs)
+    # Count how many players visited each room
+    players_per_room = Counter()
+    for df in log_dfs:
+        if isinstance(df, pd.DataFrame) and not df.empty and 'room' in df.columns:
+            visited = set(df['room'].dropna().unique())
+            for r in visited:
+                players_per_room[r] += 1
+
+    players_series = pd.Series(players_per_room)
+    players_series = players_series.reindex(counts.index).fillna(0)
+
+    # Avoid division by zero
+    denom = players_series.replace(0, np.nan)
+    average_deaths = (counts / denom).fillna(0)
 
     plt.figure(figsize=(8, 4))
     average_deaths.plot(kind='bar', color=plt.cm.tab20.colors)
@@ -434,8 +446,20 @@ def average_death_perlevel_percategory_bar_plot(log_dfs: list, graph_path: str, 
             .reindex(index=level_rooms, fill_value=0)
         )
 
-        # Calculate average deaths per room per sentiment
-        average_grouped_level = grouped_level / len(log_dfs)
+        # Determine number of players per sentiment
+        player_sentiments = []
+        for df in log_dfs:
+            if isinstance(df, pd.DataFrame) and not df.empty and 'sentiment' in df.columns:
+                s = df['sentiment'].dropna()
+                player_sentiments.append(s.value_counts().idxmax() if not s.empty else None)
+            else:
+                player_sentiments.append(None)
+
+        players_per_sentiment = Counter([s for s in player_sentiments if s is not None])
+
+        # Avoid division by zero
+        denom = pd.Series(players_per_sentiment).reindex(grouped_level.columns).fillna(0).replace(0, np.nan)
+        average_grouped_level = grouped_level.div(denom, axis=1).fillna(0)
 
         plt.figure(figsize=(10, 6))
         ax = average_grouped_level.plot(kind='bar', rot=45, color=plt.cm.Paired.colors, stacked=False, ax=plt.gca())
