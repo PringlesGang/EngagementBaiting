@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from dataclasses import dataclass
 from typing import List, Dict
+from collections import Counter
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
@@ -341,8 +342,24 @@ def average_death_percategory_bar_plot(log_dfs: list, graph_path: str, show_plot
     # Count deaths per sentiment category
     counts = combined_df['sentiment'].value_counts()
 
-    # Calculate average deaths per sentiment category
-    average_deaths = counts / len(log_dfs)
+    # Determine number of players assigned to each sentiment
+    player_sentiments = []
+    for df in log_dfs:
+        if isinstance(df, pd.DataFrame) and not df.empty and 'sentiment' in df.columns:
+            s = df['sentiment'].dropna()
+            player_sentiments.append(s.value_counts().idxmax() if not s.empty else None)
+        else:
+            player_sentiments.append(None)
+
+    players_per_sentiment = Counter([s for s in player_sentiments if s is not None])
+
+    # Build a Series aligned with counts index that contains number of players for each sentiment
+    players_series = pd.Series({k: v for k, v in players_per_sentiment.items()})
+    players_series = players_series.reindex(counts.index).fillna(0)
+
+    # Avoid division by zero
+    denom = players_series.replace(0, np.nan)
+    average_deaths = (counts / denom).fillna(0)
 
     plt.figure(figsize=(6, 4))
     average_deaths.plot(kind='bar', color=plt.cm.Paired.colors)
